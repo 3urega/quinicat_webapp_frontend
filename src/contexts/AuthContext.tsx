@@ -1,121 +1,36 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  User, 
-  signInWithPopup, 
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword
-} from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
-import Cookies from 'js-cookie';
-import { useRouter } from 'next/navigation';
+import { useSession, signIn, signOut } from 'next-auth/react';
+import { Session } from 'next-auth';
 
-// Tipo para el contexto de autenticación
-type AuthContextType = {
-  user: User | null;
+interface AuthContextType {
+  user: Session['user'] | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  getToken: () => Promise<string | null>;
-};
+  getSession: () => Promise<Session | null>;
+}
 
-// Valor por defecto para el contexto
-const defaultAuthContext: AuthContextType = {
-  user: null,
-  loading: true,
-  signInWithGoogle: async () => {},
-  signInWithEmail: async () => {},
-  signOut: async () => {},
-  getToken: async () => null,
-};
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Crear el contexto
-const AuthContext = createContext<AuthContextType>(defaultAuthContext);
-
-// Hook personalizado para usar el contexto de autenticación
-export const useAuth = () => useContext(AuthContext);
-
-// Proveedor del contexto de autenticación
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
-  // Función para guardar el token en una cookie
-  const saveToken = async (user: User) => {
-    try {
-      const token = await user.getIdToken();
-      // Guardamos el token en una cookie (1 hora de duración)
-      Cookies.set('auth-token', token, { 
-        expires: 1/24, // 1 hora
-        sameSite: 'strict',
-        secure: process.env.NODE_ENV === 'production'
-      });
-    } catch (error) {
-      console.error('Error al guardar el token:', error);
-    }
-  };
-
-  // Función para refrescar el token
-  const refreshToken = async (user: User) => {
-    try {
-      const token = await user.getIdToken(true); // true para forzar la actualización
-      await saveToken(user);
-      return token;
-    } catch (error) {
-      console.error('Error al refrescar el token:', error);
-      return null;
-    }
-  };
-
-  // Escuchar cambios en el estado de autenticación
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
+    if (status === 'loading') {
+      setLoading(true);
+    } else {
       setLoading(false);
-      
-      if (user) {
-        // Guardamos el token inicial
-        await saveToken(user);
-        
-        // Configuramos el refresco automático del token
-        const interval = setInterval(async () => {
-          await refreshToken(user);
-        }, 55 * 60 * 1000); // Refrescar cada 55 minutos
-        
-        return () => clearInterval(interval);
-      } else {
-        // Si no hay usuario, eliminamos la cookie
-        Cookies.remove('auth-token');
-      }
-    });
-
-    // Limpiar efecto al desmontar
-    return () => unsubscribe();
-  }, []);
-
-  // Función para obtener el token actual
-  const getToken = async () => {
-    if (!user) return null;
-    try {
-      return await user.getIdToken();
-    } catch (error) {
-      console.error('Error al obtener el token:', error);
-      return null;
     }
-  };
+  }, [status]);
 
-  // Función para iniciar sesión con Google
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result.user) {
-        await saveToken(result.user);
-      }
+      await signIn('google', { callbackUrl: '/dashboard' });
     } catch (error) {
       console.error('Error al iniciar sesión con Google:', error);
       throw error;
@@ -124,14 +39,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Función para iniciar sesión con email y contraseña
   const signInWithEmail = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const result = await firebaseSignInWithEmailAndPassword(auth, email, password);
-      if (result.user) {
-        await saveToken(result.user);
-      }
+      await signIn('credentials', {
+        email,
+        password,
+        redirect: true,
+        callbackUrl: '/dashboard',
+      });
     } catch (error) {
       console.error('Error al iniciar sesión con email:', error);
       throw error;
@@ -140,15 +56,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Función para cerrar sesión
-  const signOut = async () => {
+  const handleSignOut = async () => {
     try {
       setLoading(true);
-      await firebaseSignOut(auth);
-      // Eliminamos la cookie
-      Cookies.remove('auth-token');
-      // Redirigimos al inicio al cerrar sesión
-      router.push('/');
+      await signOut({ callbackUrl: '/' });
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
       throw error;
@@ -157,14 +68,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const value: AuthContextType = {
-    user,
+  const getSession = async () => {
+    return session;
+  };
+
+  const value = {
+    user: session?.user || null,
     loading,
     signInWithGoogle,
     signInWithEmail,
-    signOut,
-    getToken,
+    signOut: handleSignOut,
+    getSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+  }
+  return context;
 } 
