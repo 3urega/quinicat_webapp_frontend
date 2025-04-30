@@ -3,11 +3,15 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary-green: #4CAF50;
+  --primary-yellow: #FFD600; /* Amarillo abejorro */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary-green: var(--primary-green);
+  --color-primary-yellow: var(--primary-yellow);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -23,4 +27,46 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Clases para el aspect ratio del iframe */
+.aspect-w-16 {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+}
+
+.aspect-w-16 iframe,
+.aspect-w-16 video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Clases personalizadas para colores corporativos */
+.bg-primary-green {
+  background-color: var(--primary-green);
+}
+
+.bg-primary-yellow {
+  background-color: var(--primary-yellow);
+}
+
+.text-primary-green {
+  color: var(--primary-green);
+}
+
+.text-primary-yellow {
+  color: var(--primary-yellow);
+}
+
+.border-primary-green {
+  border-color: var(--primary-green);
+}
+
+.border-primary-yellow {
+  border-color: var(--primary-yellow);
 }

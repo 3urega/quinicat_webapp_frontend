@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Logo Fútbol Local</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <circle fill="#4CAF50" cx="100" cy="100" r="90"></circle>
+        <path d="M100,10 C43.8,10 10,43.8 10,100 C10,156.2 43.8,190 100,190 C156.2,190 190,156.2 190,100 C190,43.8 156.2,10 100,10 Z M100,30 C145.3,30 170,54.7 170,100 C170,145.3 145.3,170 100,170 C54.7,170 30,145.3 30,100 C30,54.7 54.7,30 100,30 Z" fill="#FFD600" fill-rule="nonzero"></path>
+        <path d="M100,40 L100,60 M40,100 L60,100 M100,140 L100,160 M140,100 L160,100 M63,63 L77,77 M63,137 L77,123 M137,137 L123,123 M137,63 L123,77" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"></path>
+        <polygon fill="#FFFFFF" points="90 70 110 70 120 120 80 120"></polygon>
+        <circle fill="#FFD600" cx="100" cy="40" r="6"></circle>
+        <circle fill="#FFD600" cx="100" cy="160" r="6"></circle>
+        <circle fill="#FFD600" cx="40" cy="100" r="6"></circle>
+        <circle fill="#FFD600" cx="160" cy="100" r="6"></circle>
+        <circle fill="#FFD600" cx="63" cy="63" r="6"></circle>
+        <circle fill="#FFD600" cx="137" cy="63" r="6"></circle>
+        <circle fill="#FFD600" cx="63" cy="137" r="6"></circle>
+        <circle fill="#FFD600" cx="137" cy="137" r="6"></circle>
+    </g>
+</svg> 
