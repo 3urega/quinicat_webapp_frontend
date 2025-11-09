@@ -19,7 +19,7 @@ export default function Hero() {
           <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left flex flex-col justify-center">
             <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
               <span className="block">El fútbol local</span>
-              <span className="block text-[#FFD600]">más cerca que nunca</span>
+              <span className="block text-electric-blue">más cerca que nunca</span>
             </h1>
             <p className="mt-6 text-base text-gray-300 sm:text-lg sm:max-w-xl sm:mx-auto lg:mx-0">
               Sigue todos los resultados, clasificaciones y equipos de tu competición local favorita. 
@@ -29,7 +29,7 @@ export default function Hero() {
               <div className="rounded-md shadow">
                 <Link
                   href="#"
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[#4CAF50] hover:bg-green-700 md:py-4 md:text-lg md:px-10"
+                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-green hover:bg-electric-blue md:py-4 md:text-lg md:px-10"
                 >
                   Ver resultados
                 </Link>
@@ -37,7 +37,7 @@ export default function Hero() {
               <div className="mt-3 sm:mt-0 sm:ml-3">
                 <Link
                   href="/login"
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-[#4CAF50] bg-[#FFD600] hover:bg-[#e6c200] md:py-4 md:text-lg md:px-10"
+                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-primary-green bg-primary-yellow hover:bg-primary-yellow/90 md:py-4 md:text-lg md:px-10"
                 >
                   Iniciar sesión
                 </Link>
@@ -46,7 +46,7 @@ export default function Hero() {
           </div>
           <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
             <div className="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md">
-              <div className="relative block w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden border-4 border-[#FFD600]">
+              <div className="relative block w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden border-4 border-primary-yellow">
                 <span className="sr-only">Ver el video de introducción</span>
                 <div className="aspect-w-16 aspect-h-9">
                   <iframe 

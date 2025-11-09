@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+// import { UserRole } from '@/types/roles';
 
 // Este middleware se ejecuta en cada solicitud
 export async function middleware(request: NextRequest) {
@@ -26,6 +27,27 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
       return NextResponse.redirect(loginUrl);
     }
+
+    // Obtener el rol del usuario desde el endpoint /me
+    // try {
+    //   const response = await fetch(`${process.env.SYMFONY_API_URL}/me`, {
+    //     headers: {
+    //       'Authorization': `Bearer ${token.symfonyToken}`
+    //     }
+    //   });
+
+    //   if (!response.ok) {
+    //     return NextResponse.redirect(new URL('/', request.url));
+    //   }
+
+    //   const userData = await response.json();
+    //   if (userData.role !== UserRole.ADMIN) {
+    //     return NextResponse.redirect(new URL('/', request.url));
+    //   }
+    // } catch (error) {
+    //   console.error('Error al obtener datos del usuario:', error);
+    //   return NextResponse.redirect(new URL('/', request.url));
+    // }
     
     return NextResponse.next();
   }
