@@ -1,70 +1,65 @@
-import { getToken } from '@/contexts/AuthContext';
+import { getSession } from 'next-auth/react';
 
-// Configuración base de la API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const DEFAULT_API_URL = 'http://localhost:3000/api';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_SYMFONY_API_URL ||
+  DEFAULT_API_URL;
 
-// Interfaz para las opciones de la petición
 interface RequestOptions extends RequestInit {
   requiresAuth?: boolean;
 }
 
-// Clase para manejar errores de la API
 class ApiError extends Error {
   constructor(
     public status: number,
-    public message: string,
-    public data?: any
+    message: string,
+    public data?: unknown
   ) {
     super(message);
     this.name = 'ApiError';
   }
 }
 
-// Función para realizar peticiones a la API
+async function resolveAuthToken(): Promise<string | null> {
+  const session = await getSession();
+  return session?.user?.symfonyToken ?? null;
+}
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const {
-    requiresAuth = true,
-    headers = {},
-    ...restOptions
-  } = options;
+  const { requiresAuth = true, headers = {}, ...restOptions } = options;
 
-  // Configurar headers
-  const requestHeaders: HeadersInit = {
+  const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...headers,
+    ...(headers as Record<string, string>),
   };
 
-  // Añadir token de autenticación si es necesario
   if (requiresAuth) {
-    const token = await getToken();
+    const token = await resolveAuthToken();
     if (!token) {
-      throw new ApiError(401, 'No autorizado: Token no disponible');
+      throw new ApiError(401, 'No autorizado: token no disponible');
     }
-    requestHeaders['Authorization'] = `Bearer ${token}`;
+    requestHeaders.Authorization = `Bearer ${token}`;
   }
 
-  // Construir URL completa
-  const url = `${API_BASE_URL}${endpoint}`;
+  const baseUrl = API_BASE_URL.replace(/\/$/, '');
+  const url = `${baseUrl}${endpoint}`;
 
   try {
-    const response = await fetch(url, {
-      headers: requestHeaders,
-      ...restOptions,
-    });
+    const response = await fetch(
+      url,
+      Object.assign({}, restOptions, {
+        headers: requestHeaders,
+      })
+    );
 
-    // Parsear respuesta
     const data = await response.json();
 
-    // Si la respuesta no es exitosa, lanzar error
     if (!response.ok) {
-      throw new ApiError(
-        response.status,
-        data.message || 'Error en la petición',
-        data
-      );
+      throw new ApiError(response.status, data?.message || 'Error en la petición', data);
     }
 
     return data as T;
@@ -72,47 +67,29 @@ export async function apiRequest<T>(
     if (error instanceof ApiError) {
       throw error;
     }
+
     throw new ApiError(500, 'Error en la conexión con el servidor');
   }
 }
 
-// Funciones específicas para diferentes endpoints
-
-// Apuestas
 export const apuestasApi = {
-  // Obtener todas las apuestas
   getAll: () => apiRequest<Apuesta[]>('/apuestas'),
-  
-  // Obtener una apuesta por ID
   getById: (id: string) => apiRequest<Apuesta>(`/apuestas/${id}`),
-  
-  // Crear una nueva apuesta
-  create: (data: CreateApuestaDto) => 
-    apiRequest<Apuesta>('/apuestas', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  
-  // Actualizar una apuesta
+  create: (data: CreateApuestaDto) =>
+    apiRequest<Apuesta>('/apuestas', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: UpdateApuestaDto) =>
     apiRequest<Apuesta>(`/apuestas/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-  
-  // Eliminar una apuesta
   delete: (id: string) =>
     apiRequest<void>(`/apuestas/${id}`, {
       method: 'DELETE',
     }),
 };
 
-// Usuarios
 export const usuariosApi = {
-  // Obtener perfil del usuario actual
   getProfile: () => apiRequest<UserProfile>('/users/profile'),
-  
-  // Actualizar perfil
   updateProfile: (data: UpdateProfileDto) =>
     apiRequest<UserProfile>('/users/profile', {
       method: 'PUT',
@@ -120,7 +97,6 @@ export const usuariosApi = {
     }),
 };
 
-// Tipos de datos
 interface Apuesta {
   id: string;
   fecha: string;
@@ -160,4 +136,4 @@ interface UserProfile {
 interface UpdateProfileDto {
   nombre?: string;
   saldo?: number;
-} 
+}

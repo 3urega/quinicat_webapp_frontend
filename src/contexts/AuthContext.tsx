@@ -1,16 +1,32 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
-import { Session } from 'next-auth';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  useSession,
+  signIn,
+  signOut,
+  getSession as nextAuthGetSession,
+} from 'next-auth/react';
+import type { Session } from 'next-auth';
+
+type RefreshSessionPayload = {
+  symfonyToken?: string;
+  symfonyTokenExpiresAt?: string;
+  role?: string;
+};
 
 interface AuthContextType {
   user: Session['user'] | null;
+  symfonyToken: string | null;
+  symfonyTokenExpiresAt: string | null;
+  role: string | null;
   loading: boolean;
+  error: string | null;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   getSession: () => Promise<Session | null>;
+  refreshSession: (payload: RefreshSessionPayload) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,22 +34,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'loading') {
-      setLoading(true);
-    } else {
-      setLoading(false);
-    }
+    setLoading(status === 'loading');
   }, [status]);
+
+  useEffect(() => {
+    if (status === 'authenticated' && !session?.user?.symfonyToken) {
+      setError(
+        'No se pudo obtener el token de autenticación del backend. Intenta cerrar sesión e iniciar de nuevo.'
+      );
+    } else {
+      setError(null);
+    }
+  }, [session, status]);
 
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
       await signIn('google', { callbackUrl: '/dashboard' });
-    } catch (error) {
-      console.error('Error al iniciar sesión con Google:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error al iniciar sesión con Google:', err);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -48,9 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirect: true,
         callbackUrl: '/dashboard',
       });
-    } catch (error) {
-      console.error('Error al iniciar sesión con email:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error al iniciar sesión con email:', err);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -60,28 +83,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       await signOut({ callbackUrl: '/' });
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error al cerrar sesión:', err);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const getSession = async () => {
-    return session;
+  const refreshSession = async (payload: RefreshSessionPayload) => {
+    await fetch('/api/auth/session?update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
   };
 
-  const value = {
-    user: session?.user || null,
-    loading,
-    signInWithGoogle,
-    signInWithEmail,
-    signOut: handleSignOut,
-    getSession,
-  };
+  const contextValue = useMemo<AuthContextType>(
+    () => ({
+      user: session?.user ?? null,
+      symfonyToken: session?.user?.symfonyToken ?? null,
+      symfonyTokenExpiresAt: session?.user?.symfonyTokenExpiresAt ?? null,
+      role: session?.user?.role ?? null,
+      loading,
+      error,
+      signInWithGoogle,
+      signInWithEmail,
+      signOut: handleSignOut,
+      getSession: nextAuthGetSession,
+      refreshSession,
+    }),
+    [session, loading, error]
+  );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -90,4 +127,4 @@ export function useAuth() {
     throw new Error('useAuth debe ser usado dentro de un AuthProvider');
   }
   return context;
-} 
+}
